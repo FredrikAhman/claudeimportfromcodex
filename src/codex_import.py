@@ -875,6 +875,7 @@ def sync_one(s: dict, entry: dict | None, args, version: str, ledger: dict,
         end = newer[-1][0] if newer else start
         if entry and not args.dry_run and entry.get("sourceBytes") != end:
             entry["sourceBytes"] = end
+            entry["sourceMtime"] = int(s["path"].stat().st_mtime)
             save_ledger(ledger)
         return
 
@@ -1127,7 +1128,8 @@ def cmd_status(args):
             notes.append("no desktop card")
         if not src.exists():
             notes.append("source rollout gone")
-        elif v.get("sourceMtime") and int(src.stat().st_mtime) != v["sourceMtime"]:
+        elif (src.stat().st_size != v["sourceBytes"] if v.get("sourceBytes") is not None
+              else v.get("sourceMtime") and int(src.stat().st_mtime) != v["sourceMtime"]):
             notes.append("source rollout changed since import")
         issues += bool(notes)
         print(f"  {'!' if notes else ' '} {v['title'][:56]}")
